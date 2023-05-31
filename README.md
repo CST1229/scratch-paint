@@ -1,6 +1,4 @@
-# TurboWarp/scratch-paint
-
-Modified version of scratch-paint for TurboWarp
+scratch-paint modified for use in [TurboWarp](https://turbowarp.org/), modified for use in [PenguinMod](https://penguinmod.site/), modified for use in Codebase (quite recursive!).
 
 ## License
 
