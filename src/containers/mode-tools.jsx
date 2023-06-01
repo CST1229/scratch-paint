@@ -45,7 +45,9 @@ class ModeTools extends React.Component {
             'handleMergeShape',
             'handleMaskShape',
             'handleSubtractShape',
-            'handleExcludeShape'
+            'handleExcludeShape',
+            'handleCutShape',
+            'handleFractureShape'
         ]);
     }
     _getSelectedUncurvedPoints () {
@@ -160,16 +162,46 @@ class ModeTools extends React.Component {
     }
 
     handleTextAlignLeft () {
-        TextTool.textAlignment = "left";
+        TextTool.textAlignment = 'left';
     }
     handleTextAlignCenter () {
-        TextTool.textAlignment = "center";
+        TextTool.textAlignment = 'center';
     }
     handleTextAlignRight () {
-        TextTool.textAlignment = "right";
+        TextTool.textAlignment = 'right';
     }
 
-    handleMergeShape (specificOperation) {
+    handleMergeShape (specificOperation, doSelections) {
+        if (specificOperation === 'fracture') {
+            const selectedItems = getSelectedRootItems();
+
+            const results = [];
+            const intersected = this.handleMergeShape('intersect', false);
+            results.push(
+                ...intersected
+            );
+
+            selectedItems.forEach(item => {
+                for (const subtract of intersected) {
+                    results.push(item.subtract(subtract));
+                }
+            });
+
+            for (const result of results) {
+                if (result._children && result._children.length > 0) {
+                    result._children.forEach(
+                        child => child.insertBelow(result.parent)
+                    );
+                    result.remove();
+                }
+            }
+
+            selectedItems.forEach(item => item.remove());
+            results.forEach(item => setItemSelection(item, true));
+            this.props.onUpdateImage();
+            return;
+        }
+        
         const selectedItems = getSelectedRootItems();
         if (selectedItems.length < 2) {
             // If nothing or not enough items are selected,
@@ -181,8 +213,34 @@ class ModeTools extends React.Component {
             return;
         }
         const results = [];
-        // unite the shapes together, creating a clone on top of the original
-        if (typeof specificOperation === "string") {
+
+        // unite the shapes together, removing the original
+        if (specificOperation === 'divide') {
+            const last = selectedItems[selectedItems.length - 1];
+            const lastClone = last.clone();
+            selectedItems.forEach(item => {
+                if (item === last) {
+                    return;
+                }
+                const result = item.divide(last);
+                results.push(result);
+            });
+            results.push(lastClone);
+
+            // ungroup the compound paths
+            for (const result of results) {
+                if (result.children && result.children.length > 0) {
+                    result.children.forEach(
+                        child => child.insertBelow(result.parent)
+                    );
+                }
+            }
+
+            selectedItems.forEach(item => item.remove());
+            results.forEach(result => setItemSelection(result, true));
+            this.props.onUpdateImage();
+            return;
+        } else if (typeof specificOperation === 'string') {
             let idx = 0;
             selectedItems.forEach(item => {
                 if (idx === 0) {
@@ -205,23 +263,37 @@ class ModeTools extends React.Component {
                 idx++;
             });
         }
-
-        if (results.length <= 1) {
-            setItemSelection(results[0], true);
-            this.props.onUpdateImage();
-        } else {
-            groupItems(results, this.props.clearSelectedItems, this.props.setSelectedItems, this.props.onUpdateImage);
+        if (doSelections) {
+            selectedItems.forEach(item => item.remove());
+            if (results.length <= 1) {
+                setItemSelection(results[0], true);
+                this.props.onUpdateImage();
+            } else {
+                groupItems(
+                    results,
+                    this.props.clearSelectedItems,
+                    this.props.setSelectedItems,
+                    this.props.onUpdateImage
+                );
+            }
         }
+        return results;
     }
 
     handleMaskShape () {
-        this.handleMergeShape("intersect");
+        this.handleMergeShape('intersect', true);
     }
     handleSubtractShape () {
-        this.handleMergeShape("subtract");
+        this.handleMergeShape('subtract', true);
     }
     handleExcludeShape () {
-        this.handleMergeShape("exclude");
+        this.handleMergeShape('exclude', true);
+    }
+    handleFractureShape () {
+        this.handleMergeShape('fracture', true);
+    }
+    handleCutShape () {
+        this.handleMergeShape('divide', true);
     }
 
     _handleFlip (horizontalScale, verticalScale, selectedItems) {
@@ -309,6 +381,8 @@ class ModeTools extends React.Component {
                 onMaskShape={this.handleMaskShape}
                 onSubtractShape={this.handleSubtractShape}
                 onExcludeShape={this.handleExcludeShape}
+                onCutShape={this.handleCutShape}
+                onFractureShape={this.handleFractureShape}
             />
         );
     }

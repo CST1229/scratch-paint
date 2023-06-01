@@ -29,8 +29,10 @@ import ModeToolsContainer from '../../containers/mode-tools.jsx';
 import OvalMode from '../../containers/oval-mode.jsx';
 import RectMode from '../../containers/rect-mode.jsx';
 import RoundedRectMode from '../../containers/rounded-rect-mode.jsx';
+/*
 import SussyMode from '../../containers/sussy-mode.jsx';
 import DragonMode from '../../containers/dragon-mode.jsx';
+*/
 import TriangleMode from '../../containers/triangle-mode.jsx';
 import ReshapeMode from '../../containers/reshape-mode.jsx';
 import SelectMode from '../../containers/select-mode.jsx';
@@ -174,12 +176,14 @@ const PaintEditorComponent = props => (
                     <TriangleMode
                         onUpdateImage={props.onUpdateImage}
                     />
-                    <SussyMode
-                        onUpdateImage={props.onUpdateImage}
-                    />
-                    <DragonMode
-                        onUpdateImage={props.onUpdateImage}
-                    />
+                    {/* hide until i figure out what to do with these
+                        <SussyMode
+                            onUpdateImage={props.onUpdateImage}
+                        />
+                        <DragonMode
+                            onUpdateImage={props.onUpdateImage}
+                        />
+                    */}
                 </div>
             ) : null}
 

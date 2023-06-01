@@ -26,14 +26,13 @@ class RoundedRectMode extends React.Component {
             'deactivateTool',
             'validateColorState'
         ]);
-        console.log(props)
     }
     componentDidMount () {
         if (this.props.isRoundedRectModeActive) {
             this.activateTool(this.props);
         }
     }
-    UNSAFE_componentWillReceiveProps (nextProps) {
+    componentWillReceiveProps (nextProps) {
         if (this.tool && nextProps.colorState !== this.props.colorState) {
             this.tool.setColorState(nextProps.colorState);
         }
