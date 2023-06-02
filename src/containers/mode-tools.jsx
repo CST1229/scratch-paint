@@ -17,7 +17,6 @@ import {
     selectAllSegments
 } from '../helper/selection';
 import {HANDLE_RATIO, ensureClockwise} from '../helper/math';
-import {groupItems} from '../helper/group';
 import {getRaster} from '../helper/layer';
 import {flipBitmapHorizontal, flipBitmapVertical, selectAllBitmap} from '../helper/bitmap';
 import Formats, {isBitmap} from '../lib/format';
@@ -171,33 +170,61 @@ class ModeTools extends React.Component {
         TextTool.textAlignment = 'right';
     }
 
+    ungroupCompounds (items) {
+        // ungroup any compound paths
+        const newItems = [];
+        for (const result of items) {
+            if (result.children && result.children.length > 0) {
+                result.children.forEach(
+                    child => {
+                        child.insertBelow(result);
+                        newItems.push(child);
+                    }
+                );
+            }
+            newItems.push(result);
+            if (result.children && result.children.length === 0) result.remove();
+        }
+        return newItems;
+    }
+
     handleMergeShape (specificOperation, doSelections) {
         if (specificOperation === 'fracture') {
             const selectedItems = getSelectedRootItems();
 
             const results = [];
-            const intersected = this.handleMergeShape('intersect', false);
-            results.push(
-                ...intersected
-            );
-
-            selectedItems.forEach(item => {
-                for (const subtract of intersected) {
-                    results.push(item.subtract(subtract));
+            
+            selectedItems.forEach(item1 => {
+                let newItem = item1;
+                for (const item2 of selectedItems) {
+                    if (item2 === item1) continue;
+                    newItem = newItem.divide(item2, {insert: false});
                 }
+                results.push(newItem);
+                newItem.insertBelow(item1);
             });
 
-            for (const result of results) {
-                if (result._children && result._children.length > 0) {
-                    result._children.forEach(
-                        child => child.insertBelow(result.parent)
-                    );
-                    result.remove();
+            selectedItems.forEach(item => item.remove());
+            const ungrouped = this.ungroupCompounds(results);
+
+            // kinda ugly solution to remove duplicate objects
+            const processed = new Set();
+            for (const result of ungrouped) {
+                for (const result2 of ungrouped) {
+                    if (result === result2) continue;
+                    if (result.position.equals(result2.position)) {
+                        if (!processed.has(result) && !processed.has(result2)) {
+                            result2.remove();
+                            processed.add(result);
+                            processed.add(result2);
+                        }
+                    }
                 }
             }
 
-            selectedItems.forEach(item => item.remove());
+            this.props.setSelectedItems([]);
             results.forEach(item => setItemSelection(item, true));
+
             this.props.onUpdateImage();
             return;
         }
@@ -208,74 +235,103 @@ class ModeTools extends React.Component {
             // we probably shouldnt select and merge everything
             return;
         }
-        if (!selectedItems[0].unite) {
-            // we cant unite this item, cancel
-            return;
-        }
         const results = [];
 
         // unite the shapes together, removing the original
         if (specificOperation === 'divide') {
             const last = selectedItems[selectedItems.length - 1];
+            if (!last.unite) return;
             const lastClone = last.clone();
             selectedItems.forEach(item => {
+                if (!item.unite) return;
                 if (item === last) {
                     return;
                 }
                 const result = item.divide(last);
+                result.insertBelow(item);
                 results.push(result);
             });
             results.push(lastClone);
 
-            // ungroup the compound paths
-            for (const result of results) {
-                if (result.children && result.children.length > 0) {
-                    result.children.forEach(
-                        child => child.insertBelow(result.parent)
-                    );
-                }
-            }
+            this.ungroupCompounds(results);
 
             selectedItems.forEach(item => item.remove());
             results.forEach(result => setItemSelection(result, true));
             this.props.onUpdateImage();
             return;
         } else if (typeof specificOperation === 'string') {
-            let idx = 0;
-            selectedItems.forEach(item => {
-                if (idx === 0) {
-                    idx++;
+            const last = selectedItems[selectedItems.length - 1];
+            if (!last.unite) return;
+
+            let result = null;
+            const processItem = function (item) {
+                if (item === last) {
                     return;
                 }
-                const result = selectedItems[0][specificOperation](item);
+                if (item._children) {
+                    item._children.forEach(processItem);
+                    return;
+                }
+                if (!item.unite) return;
+                if (!result) result = item;
+
+                if ((specificOperation === 'subtract' || specificOperation === 'intersect') && doSelections) {
+                    const newItem = item[specificOperation](last);
+                    results.push(newItem);
+                    newItem.insertBelow(item);
+                } else {
+                    result = item[specificOperation](last, {insert: false});
+                }
+                item.remove();
+            };
+            selectedItems.forEach(processItem);
+
+            if (!result) return;
+
+            if (results) {
                 results.push(result);
-                idx++;
-            });
+            }
+            if ((specificOperation !== 'subtract' && specificOperation !== 'intersect') && doSelections) {
+                results.forEach(item => item.insertBelow(last));
+            }
+            last.remove();
         } else {
-            let idx = 0;
-            selectedItems.forEach(item => {
-                if (idx === 0) {
-                    idx++;
+            // here, last is used only for placing the items
+            const last = selectedItems[selectedItems.length - 1];
+
+            const usedItems = [];
+
+            let result = null;
+            const processItem = function (item) {
+                if (item._children) {
+                    item._children.forEach(processItem);
                     return;
                 }
-                const result = selectedItems[0].unite(item);
-                results.push(result);
-                idx++;
-            });
+                if (!item.unite) return;
+                if (result) {
+                    result = result.unite(item, {insert: false});
+                } else {
+                    result = item;
+                }
+                usedItems.push(item);
+            };
+            selectedItems.forEach(processItem);
+
+            if (!result) return;
+
+            results.push(result);
+            result.insertBelow(last);
+
+            usedItems.forEach(item => item.remove());
         }
+
+        this.ungroupCompounds(results);
+
         if (doSelections) {
             selectedItems.forEach(item => item.remove());
-            if (results.length <= 1) {
-                setItemSelection(results[0], true);
-                this.props.onUpdateImage();
-            } else {
-                groupItems(
-                    results,
-                    this.props.clearSelectedItems,
-                    this.props.setSelectedItems,
-                    this.props.onUpdateImage
-                );
-            }
+            // this.props.setSelectedItems([]);
+            results.forEach(result => setItemSelection(result, true));
+            this.props.onUpdateImage();
         }
         return results;
     }
