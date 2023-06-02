@@ -105,17 +105,24 @@ class TriangleTool extends paper.Tool {
             this.tri.remove();
         }
 
-        // idk how paper works so we use rectangle to make a triangle
-        const tri = new paper.Rectangle(event.downPoint, event.point);
+        const rect = new paper.Rectangle(event.downPoint, event.point);
         const squareDimensions = getSquareDimensions(event.downPoint, event.point);
         if (event.modifiers.shift) {
-            tri.size = squareDimensions.size.abs();
+            rect.size = squareDimensions.size.abs();
         }
 
-        this.tri = new paper.Path.RegularPolygon(event.downPoint, TriangleTool.sideCount, 50);
-        this.tri.scale(tri.size.width / 100, tri.size.height / 100, event.downPoint);
+        this.tri = new paper.Path.RegularPolygon(rect.center, TriangleTool.sideCount, 1);
+        // lower-polygon polygons sometimes stretch outside the radius,
+        // correct that (except when holding control)
+        if (event.modifiers.command) {
+            this.tri.scale(0.5);
+        } else {
+            this.tri.scale(1 / this.tri.bounds.width, 1 / this.tri.bounds.height);
+        }
+        this.tri.scale(rect.width, rect.height, rect.center);
         if (event.modifiers.alt) {
             this.tri.position = event.downPoint;
+            this.tri.scale(2);
         } else if (event.modifiers.shift) {
             this.tri.position = squareDimensions.position;
         } else {
