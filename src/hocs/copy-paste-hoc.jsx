@@ -7,7 +7,6 @@ import {connect} from 'react-redux';
 
 import {
     clearSelection,
-    deleteSelection,
     getAllRootItems,
     getSelectedLeafItems,
     getSelectedRootItems
@@ -91,8 +90,12 @@ const CopyPasteHOC = function (WrappedComponent) {
             }
             this.props.setClipboardItems(clipboardItems);
             // delete items
-            if (deleteSelection(this.props.mode, this.props.onUpdateImage)) {
+            if (selectedItems.length > 0) {
+                for (let i = 0; i < selectedItems.length; i++) {
+                    selectedItems[i].remove();
+                }
                 clearSelection(this.props.clearSelectedItems);
+                this.props.onUpdateImage();
             }
         }
         handlePaste () {
