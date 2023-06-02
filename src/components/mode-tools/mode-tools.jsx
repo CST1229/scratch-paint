@@ -377,17 +377,17 @@ const ModeToolsComponent = props => {
                         onClick={props.onDelete}
                     />
                 </InputGroup>
-                <MediaQuery minWidth={layout.fullSizeEditorMinWidthExtraToolsCollapsed}>
+                <MediaQuery minWidth={layout.fullSizeEditorMinWidthExtraToolsCollapsed - 480 + props.stageWidth}>
                     {/* Flip Options */}
                     {flipOptions}
                     {/* Reshaping Methods */}
                     {(props.mode === Modes.SELECT) ? (
-                        <MediaQuery minWidth={layout.fullSizeEditorMinWidthExtraTools}>
+                        <MediaQuery minWidth={layout.fullSizeEditorMinWidthExtraTools - 480 + props.stageWidth}>
                             {reshapingMethods}
                         </MediaQuery>
                     ) : null}
                     {(props.mode === Modes.SELECT) ? (
-                        <MediaQuery maxWidth={layout.fullSizeEditorMinWidthExtraTools - 1}>
+                        <MediaQuery maxWidth={layout.fullSizeEditorMinWidthExtraTools - 1 - 480 + props.stageWidth}>
                             <InputGroup className={classNames(styles.modDashedBorder, styles.modLabeledIconHeight)}>
                                 <Dropdown
                                     className={styles.modUnselect}
@@ -408,7 +408,7 @@ const ModeToolsComponent = props => {
                         </MediaQuery>
                     ) : null}
                 </MediaQuery>
-                <MediaQuery maxWidth={layout.fullSizeEditorMinWidthExtraToolsCollapsed - 1}>
+                <MediaQuery maxWidth={layout.fullSizeEditorMinWidthExtraToolsCollapsed - 1 - 480 + props.stageWidth}>
                     <InputGroup className={classNames(styles.modDashedBorder, styles.modLabeledIconHeight)}>
                         <Dropdown
                             className={styles.modUnselect}
@@ -516,6 +516,7 @@ const ModeToolsComponent = props => {
 ModeToolsComponent.propTypes = {
     bitBrushSize: PropTypes.number,
     bitEraserSize: PropTypes.number,
+    stageWidth: PropTypes.number.isRequired,
     brushValue: PropTypes.number,
     className: PropTypes.string,
     clipboardItems: PropTypes.arrayOf(PropTypes.array),

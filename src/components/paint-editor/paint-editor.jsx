@@ -110,6 +110,7 @@ const PaintEditorComponent = props => (
                         <InputGroup className={styles.modModeTools}>
                             <ModeToolsContainer
                                 onUpdateImage={props.onUpdateImage}
+                                stageWidth={Math.max(props.width, 480)}
                             />
                         </InputGroup>
                     </div> :
@@ -131,6 +132,7 @@ const PaintEditorComponent = props => (
                             <InputGroup className={styles.modModeTools}>
                                 <ModeToolsContainer
                                     onUpdateImage={props.onUpdateImage}
+                                    canvasWidth={props.width}
                                 />
                             </InputGroup>
                         </div> : null
