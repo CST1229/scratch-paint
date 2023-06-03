@@ -205,12 +205,11 @@ class ModeTools extends React.Component {
             });
 
             selectedItems.forEach(item => item.remove());
-            const ungrouped = this.ungroupCompounds(results);
 
             // kinda ugly solution to remove duplicate objects
             const processed = new Set();
-            for (const result of ungrouped) {
-                for (const result2 of ungrouped) {
+            for (const result of selectedItems) {
+                for (const result2 of selectedItems) {
                     if (result === result2) continue;
                     if (result.position.equals(result2.position)) {
                         if (!processed.has(result) && !processed.has(result2)) {
@@ -252,8 +251,6 @@ class ModeTools extends React.Component {
                 results.push(result);
             });
             results.push(lastClone);
-
-            this.ungroupCompounds(results);
 
             selectedItems.forEach(item => item.remove());
             results.forEach(result => setItemSelection(result, true));
@@ -324,9 +321,6 @@ class ModeTools extends React.Component {
 
             usedItems.forEach(item => item.remove());
         }
-
-        this.ungroupCompounds(results);
-
         if (doSelections) {
             selectedItems.forEach(item => item.remove());
             // this.props.setSelectedItems([]);
