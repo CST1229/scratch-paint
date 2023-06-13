@@ -140,7 +140,6 @@ const ModeToolsComponent = props => {
             id: 'paint.modeTools.outlined'
         }
     });
-
     switch (props.mode) {
     case Modes.BRUSH:
         /* falls through */
@@ -408,26 +407,28 @@ const ModeToolsComponent = props => {
                         </MediaQuery>
                     ) : null}
                 </MediaQuery>
-                <MediaQuery maxWidth={layout.fullSizeEditorMinWidthExtraToolsCollapsed - 1 - 480 + props.stageWidth}>
-                    <InputGroup className={classNames(styles.modDashedBorder, styles.modLabeledIconHeight)}>
-                        <Dropdown
-                            className={styles.modUnselect}
-                            enterExitTransitionDurationMs={20}
-                            popoverContent={
-                                <InputGroup
-                                    className={styles.modContextMenu}
-                                    rtl={props.rtl}
-                                >
-                                    {flipOptions}
-                                    {reshapingMethods}
-                                </InputGroup>
-                            }
-                            tipSize={.01}
-                        >
-                            More
-                        </Dropdown>
-                    </InputGroup>
-                </MediaQuery>
+                {(props.mode === Modes.SELECT) ? (
+                    <MediaQuery maxWidth={layout.fullSizeEditorMinWidthExtraToolsCollapsed - 1 - 480 + props.stageWidth}>
+                        <InputGroup className={classNames(styles.modDashedBorder, styles.modLabeledIconHeight)}>
+                            <Dropdown
+                                className={styles.modUnselect}
+                                enterExitTransitionDurationMs={20}
+                                popoverContent={
+                                    <InputGroup
+                                        className={styles.modContextMenu}
+                                        rtl={props.rtl}
+                                    >
+                                        {flipOptions}
+                                        {reshapingMethods}
+                                    </InputGroup>
+                                }
+                                tipSize={.01}
+                            >
+                                More
+                            </Dropdown>
+                        </InputGroup>
+                    </MediaQuery>
+                ) : flipOptions}
             </div>
         );
     }
